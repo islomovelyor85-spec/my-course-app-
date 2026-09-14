@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { RequireAuth, RequireAdmin } from './components/auth/ProtectedRoute'
-import AdminGate from './components/admin/AdminGate'
+import AdminGate from './components/auth/AdminGate'
 import { initTelegramApp } from './lib/telegram'
 
 import StudentLayout from './components/layout/StudentLayout'
