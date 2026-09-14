@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react_router_dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import { RequireAuth, RequireAdmin } from './components/auth/ProtectedRoute'
+import RequireAuth from './components/auth/RequireAuth'
 import AdminGate from './components/auth/AdminGate'
-import { initTelegramApp } from './lib/telegram'
+import { initTelegramApp } from './telegram'
 
 import StudentLayout from './components/layout/StudentLayout'
 import AdminLayout from './components/layout/AdminLayout'
@@ -16,20 +16,16 @@ import Home from './pages/student/Home'
 import MyCourse from './pages/student/MyCourse'
 import LessonView from './pages/student/LessonView'
 import Tasks from './pages/student/Tasks'
-import TaskSubmit from './pages/student/TaskSubmit'
-import ProgressPage from './pages/student/Progress'
-import Profile from './pages/student/Profile'
+import Profile from './Profile'
+import Progress from './Progress'
 
 import Dashboard from './pages/admin/Dashboard'
 import CourseManager from './pages/admin/CourseManager'
 import StudentsTracking from './pages/admin/StudentsTracking'
-import SubmissionsReview from './pages/admin/SubmissionsReview'
+import SubmissionsReview from './SubmissionsReview'
 import PaymentsReview from './pages/admin/PaymentsReview'
 
 function AuthGate({ children }) {
- 
-  // Telegram Mini App ichida bo'lsa ham, oddiy brauzerda bo'lsa ham,
-  // dastlabki sessiya tekshiruvi tugaguncha kutamiz.
   const { loading } = useAuth()
   if (loading) return <LoadingSpinner fullscreen label="Ilova ishga tushmoqda..." />
   return children
@@ -42,7 +38,6 @@ function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* O'quvchi paneli */}
         <Route
           element={
             <RequireAuth>
@@ -51,29 +46,26 @@ function AppRoutes() {
           }
         >
           <Route path="/" element={<Home />} />
-          <Route path="/course" element={<MyCourse />} />
-          <Route path="/course/lesson/:lessonId" element={<LessonView />} />
+          <Route path="/my-course" element={<MyCourse />} />
+          <Route path="/lessons/:id" element={<LessonView />} />
           <Route path="/tasks" element={<Tasks />} />
-          <Route path="/tasks/submit/:lessonId" element={<TaskSubmit />} />
-          <Route path="/progress" element={<ProgressPage />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/progress" element={<Progress />} />
         </Route>
 
-        {/* Admin (ustoz) paneli — role='admin' TEKSHIRUVI + qo'shimcha parol eshigi (admin123) */}
         <Route
+          path="/admin"
           element={
-            <RequireAdmin>
-              <AdminGate>
-                <AdminLayout />
-              </AdminGate>
-            </RequireAdmin>
+            <AdminGate>
+              <AdminLayout />
+            </AdminGate>
           }
         >
-          <Route path="/admin" element={<Dashboard />} />
-          <Route path="/admin/courses" element={<CourseManager />} />
-          <Route path="/admin/students" element={<StudentsTracking />} />
-          <Route path="/admin/submissions" element={<SubmissionsReview />} />
-          <Route path="/admin/payments" element={<PaymentsReview />} />
+          <Route index element={<Dashboard />} />
+          <Route path="courses" element={<CourseManager />} />
+          <Route path="students" element={<StudentsTracking />} />
+          <Route path="submissions" element={<SubmissionsReview />} />
+          <Route path="payments" element={<PaymentsReview />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
