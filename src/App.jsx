@@ -26,7 +26,8 @@ import StudentsTracking from './pages/admin/StudentsTracking'
 import SubmissionsReview from './pages/admin/SubmissionsReview'
 import PaymentsReview from './pages/admin/PaymentsReview'
 
-function AuthGate({ children }) 
+function AuthGate({ children }) {
+ 
   // Telegram Mini App ichida bo'lsa ham, oddiy brauzerda bo'lsa ham,
   // dastlabki sessiya tekshiruvi tugaguncha kutamiz.
   const { loading } = useAuth()
