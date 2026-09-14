@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  @apply bg-paper text-ink font-body antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1, h2, h3, h4 {
+  @apply font-display;
+}
+
+/* Ingichka, oltin rangli scrollbar — kalligrafiya ruhida */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #C9A24B;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Qalam chizig'i — bo'lim ajratkichlar uchun ingichka oltin chiziq */
+.gold-rule {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #C9A24B, transparent);
+}
