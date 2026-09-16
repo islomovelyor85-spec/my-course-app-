@@ -40,7 +40,6 @@ export async function getCourseStructure(courseId) {
     .order('order', { ascending: true })
   if (modErr) throw modErr
 
-  // har bir modul ichidagi darslarni ham tartiblab olamiz
   const sorted = (modules || []).map((m) => ({
     ...m,
     lessons: [...(m.lessons || [])].sort((a, b) => a.order - b.order)
@@ -56,7 +55,6 @@ export async function getMySubmissionsMap(userId) {
     .order('created_at', { ascending: false })
   if (error) throw error
 
-  // har bir dars uchun eng oxirgi submissionni saqlaymiz (lesson_id -> submission)
   const map = {}
   for (const s of data || []) {
     if (!map[s.lesson_id]) map[s.lesson_id] = s
@@ -84,7 +82,7 @@ export async function getMyCourseOverview(userId) {
   const isPaid = payment?.status === 'approved'
 
   const allLessonsFlat = modules.flatMap((m) => m.lessons)
-  let previousApproved = true // birinchi dars har doim ochiladi (to'lov bo'lsa)
+  let previousApproved = true
 
   const enrichedModules = modules.map((mod) => ({
     ...mod,
@@ -99,7 +97,6 @@ export async function getMyCourseOverview(userId) {
         ? 'unlocked'
         : 'locked'
 
-      // keyingi darsni hisoblash uchun holatni yangilab boramiz
       previousApproved = previousApproved && submission?.status === 'approved'
 
       return { ...lesson, submission, locked, status }
@@ -125,14 +122,6 @@ export async function getMyCourseOverview(userId) {
 
 const MAX_FILE_SIZE_MB = 25
 
-// Umumiy, xato sababini aniq ko'rsatadigan fayl yuklash funksiyasi.
-// Muammo "rasm tanlanadi, lekin yuborilmaydi" bo'lsa, sabab deyarli har doim
-// quyidagilardan biri bo'ladi (shuning uchun har birini alohida tekshiramiz
-// va aniq xabar bilan qaytaramiz):
-//  1) Storage bucket mavjud emas / nomi xato yozilgan
-//  2) Bucket uchun INSERT RLS policy o'rnatilmagan (401/403 xato)
-//  3) Foydalanuvchi sessiyasi yo'q (auth.uid() null) — policy uni bloklaydi
-//  4) Fayl juda katta yoki tarmoq uzilib qoladi
 async function uploadFileToBucket(bucket, file, userId) {
   if (!file) throw new Error('Fayl tanlanmadi')
   if (!userId) throw new Error('Foydalanuvchi aniqlanmadi — sessiya muddati tugagan bo‘lishi mumkin, qayta kiring')
@@ -152,7 +141,6 @@ async function uploadFileToBucket(bucket, file, userId) {
   })
 
   if (uploadError) {
-    // Supabase xatosini foydalanuvchiga tushunarli qilib qaytaramiz
     const msg = uploadError.message || String(uploadError)
     if (msg.toLowerCase().includes('bucket not found')) {
       throw new Error(
@@ -245,4 +233,43 @@ export async function getCourseWithModules(courseId) {
   if (modErr) throw modErr
 
   return { course, modules: modules || [] }
+}
+
+// ---- Kurs ID bo'yicha to'liq holat (to'lov + qulflash), ko'p-kursli tizim uchun ----
+export async function getCourseOverviewById(userId, courseId) {
+  const { data: course, error: courseErr } = await supabase
+    .from('courses')
+    .select('*')
+    .eq('id', courseId)
+    .single()
+  if (courseErr) throw courseErr
+
+  const [payment, modules, submissionsMap] = await Promise.all([
+    getMyPayment(userId, courseId),
+    getCourseStructure(courseId),
+    getMySubmissionsMap(userId)
+  ])
+
+  const isPaid = payment?.status === 'approved'
+  const allLessonsFlat = modules.flatMap((m) => m.lessons)
+  let previousApproved = true
+
+  const enrichedModules = modules.map((mod) => ({
+    ...mod,
+    lessons: mod.lessons.map((lesson) => {
+      const submission = submissionsMap[lesson.id] || null
+      const locked = !isPaid || !previousApproved
+      const status = !isPaid
+        ? 'locked'
+        : submission?.status === 'approved'
+        ? 'completed'
+        : previousApproved
+        ? 'unlocked'
+        : 'locked'
+      previousApproved = previousApproved && submission?.status === 'approved'
+      return { ...lesson, submission, locked, status }
+    })
+  }))
+
+  return { course, isPaid, payment, modules: enrichedModules, allLessons: allLessonsFlat }
 }

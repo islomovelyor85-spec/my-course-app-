@@ -1,15 +1,33 @@
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { Home, BookOpen, ClipboardCheck, TrendingUp, User } from 'lucide-react'
-
-function getMyCourseHref() {
-  const lastId = typeof window !== 'undefined' ? localStorage.getItem('xattot_last_course_id') : null
-  return lastId ? `/course/${lastId}` : '/'
-}
+import { supabase } from '../../lib/supabaseClient'
 
 export default function StudentLayout() {
+  const [myCourseId, setMyCourseId] = useState(
+    typeof window !== 'undefined' ? localStorage.getItem('xattot_last_course_id') : null
+  )
+
+  useEffect(() => {
+    if (myCourseId) return
+    supabase
+      .from('courses')
+      .select('id')
+      .eq('status', 'published')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.id) {
+          localStorage.setItem('xattot_last_course_id', data.id)
+          setMyCourseId(data.id)
+        }
+      })
+  }, [myCourseId])
+
   const NAV_ITEMS = [
     { to: '/', label: 'Bosh sahifa', icon: Home, end: true },
-    { to: getMyCourseHref(), label: 'Kursim', icon: BookOpen },
+    { to: myCourseId ? `/course/${myCourseId}` : '/', label: 'Kursim', icon: BookOpen },
     { to: '/tasks', label: 'Vazifalar', icon: ClipboardCheck },
     { to: '/progress', label: 'Progress', icon: TrendingUp },
     { to: '/profile', label: 'Profil', icon: User }
