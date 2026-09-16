@@ -52,6 +52,13 @@ export default function CourseManager() {
     loadModules(activeCourseId)
   }
 
+  async function deleteCourse(course) {
+    if (!confirm(`"${course.title}" kursini VA undagi barcha modul/darslarni butunlay o'chirishni tasdiqlaysizmi? Bu amalni orqaga qaytarib bo'lmaydi.`)) return
+    await supabase.from('courses').delete().eq('id', course.id)
+    setActiveCourseId(null)
+    loadCourses()
+  }
+
   async function deleteLesson(id) {
     if (!confirm('Darsni o‘chirishni tasdiqlaysizmi?')) return
     await supabase.from('lessons').delete().eq('id', id)
@@ -126,16 +133,25 @@ export default function CourseManager() {
             <p className="font-medium text-ink">{activeCourse.title}</p>
             <p className="text-xs text-ink-soft/50 mt-0.5">{activeCourse.description}</p>
           </div>
-          <button
-            onClick={() => togglePublish(activeCourse)}
-            className={`px-4 py-2 rounded-full text-xs font-medium border ${
-              activeCourse.is_published
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                : 'bg-ink/5 text-ink-soft border-beige'
-            }`}
-          >
-            {activeCourse.is_published ? 'Chop etilgan' : 'Qoralama'}
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => togglePublish(activeCourse)}
+              className={`px-4 py-2 rounded-full text-xs font-medium border ${
+                activeCourse.is_published
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-ink/5 text-ink-soft border-beige'
+              }`}
+            >
+              {activeCourse.is_published ? 'Chop etilgan' : 'Qoralama'}
+            </button>
+            <button
+              onClick={() => deleteCourse(activeCourse)}
+              className="p-2.5 rounded-full border border-rose-200 text-rose-500 hover:bg-rose-50"
+              title="Kursni o'chirish"
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
         </div>
       )}
 
