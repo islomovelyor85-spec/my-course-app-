@@ -11,11 +11,9 @@ export default function MyCourse() {
   }, []);
 
   const fetchActiveCourses = async () => {
-    // Faqat chop etilgan kurslarni tortish
     const { data: coursesData } = await supabase
       .from('courses')
-      .select('*, modules(*, lessons(*))')
-      .eq('status', 'published');
+      .select('*, modules(*, lessons(*))');
 
     if (coursesData && coursesData.length > 0) {
       setCourses(coursesData);
@@ -52,11 +50,11 @@ export default function MyCourse() {
         )}
       </div>
 
-      {/* Modullar va Darslar ro'yxati */}
+      {/* Darslar ro'yxati */}
       <h3 style={{ marginTop: '30px' }}>Darslar dasturi</h3>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '10px' }}>
         {selectedCourse.modules?.map((module, mIdx) => (
-          <div key={module.id} style={{ border: '1px solid #333', borderRadius: '8px', padding: '15px', background: '#1a1a1a' }}>
+          <div key={module.id} style={{ border: '1px solid #333', borderRadius: '8px', padding: '15px', backgroundColor: '#1a1a1a' }}>
             <h4 style={{ color: '#e0e0e0', marginBottom: '10px' }}>{mIdx + 1}-Modul: {module.title}</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {module.lessons?.map((lesson, lIdx) => (
@@ -68,7 +66,7 @@ export default function MyCourse() {
                     padding: '10px 15px',
                     borderRadius: '6px',
                     border: 'none',
-                    background: activeLesson?.id === lesson.id ? '#4a5568' : '#2d3748',
+                    backgroundColor: activeLesson?.id === lesson.id ? '#4a5568' : '#2d3748',
                     color: '#fff',
                     cursor: 'pointer'
                   }}
