@@ -37,7 +37,7 @@ export default function Tasks() {
         {lessons.map((lesson) => (
           <button
             key={lesson.id}
-            onClick={() => !lesson.locked && navigate(`/course/lesson/${lesson.id}`)}
+            onClick={() => !lesson.locked && navigate(`/tasks/submit/${lesson.id}`)}
             disabled={lesson.locked}
             className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl2 border border-beige bg-paper text-left transition-colors ${
               lesson.locked ? 'opacity-50' : 'hover:border-gold/50'

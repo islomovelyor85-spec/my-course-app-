@@ -80,7 +80,7 @@ export default function TaskSubmit() {
           Kuratoringiz tez orada tekshiradi va tasdiqlangach keyingi darsingiz ochiladi.
         </p>
         <button
-          onClick={() => navigate('/course')}
+          onClick={() => navigate('/')}
           className="mt-2 px-6 py-3 rounded-full bg-ink text-beige-soft text-sm font-medium"
         >
           Kursga qaytish

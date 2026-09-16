@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ChevronLeft, ChevronDown, PlayCircle, X } from 'lucide-react'
+import { ChevronLeft, ChevronDown, PlayCircle, X, ClipboardCheck } from 'lucide-react'
 import { getCourseWithModules } from '../../lib/queries'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 
@@ -104,12 +104,22 @@ export default function MyCourse() {
         )}
       </div>
 
-      {activeLesson && <VideoPlayerModal lesson={activeLesson} onClose={() => setActiveLesson(null)} />}
+      {activeLesson && (
+        <VideoPlayerModal
+          lesson={activeLesson}
+          onClose={() => setActiveLesson(null)}
+          onSubmitTask={() => {
+            const lessonId = activeLesson.id
+            setActiveLesson(null)
+            navigate(`/tasks/submit/${lessonId}`)
+          }}
+        />
+      )}
     </div>
   )
 }
 
-function VideoPlayerModal({ lesson, onClose }) {
+function VideoPlayerModal({ lesson, onClose, onSubmitTask }) {
   const embed = toEmbedUrl(lesson.video_url)
 
   return (
@@ -138,6 +148,15 @@ function VideoPlayerModal({ lesson, onClose }) {
               Video havolasi mavjud emas
             </div>
           )}
+        </div>
+        <div className="px-5 py-4 border-t border-beige">
+          <button
+            onClick={onSubmitTask}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl2 bg-ink text-beige-soft font-medium text-sm hover:bg-ink-soft transition-colors"
+          >
+            <ClipboardCheck size={16} />
+            Vazifa yuklash
+          </button>
         </div>
       </div>
     </div>
