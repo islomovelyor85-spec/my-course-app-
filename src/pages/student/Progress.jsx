@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Award } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { getMyCourseOverview } from '../../lib/queries'
+import { getMyActiveCourseOverview } from '../../lib/queries'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 
 const MILESTONES = [25, 50, 75, 100]
@@ -19,7 +19,7 @@ export default function Progress() {
 
   useEffect(() => {
     if (!profile) return
-    getMyCourseOverview(profile.id).then(setOverview).finally(() => setLoading(false))
+    getMyActiveCourseOverview(profile.id).then(setOverview).finally(() => setLoading(false))
   }, [profile])
 
   if (loading) return <LoadingSpinner fullscreen />

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, ClipboardList } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { getMyCourseOverview } from '../../lib/queries'
+import { getMyActiveCourseOverview } from '../../lib/queries'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import StatusBadge from '../../components/common/StatusBadge'
 
@@ -14,7 +14,7 @@ export default function Tasks() {
 
   useEffect(() => {
     if (!profile) return
-    getMyCourseOverview(profile.id).then(setOverview).finally(() => setLoading(false))
+    getMyActiveCourseOverview(profile.id).then(setOverview).finally(() => setLoading(false))
   }, [profile])
 
   if (loading) return <LoadingSpinner fullscreen />

@@ -78,11 +78,23 @@ export default function MyCourse() {
 
       {!isPaid && (
         <div className="mx-5 mb-5 bg-amber-50 border border-amber-200 rounded-xl2 p-4 text-sm text-amber-800">
-          {payment?.status === 'pending'
-            ? "To'lovingiz ko'rib chiqilmoqda. Tasdiqlangach darslar ochiladi."
-            : payment?.status === 'rejected'
-            ? "To'lovingiz rad etildi. Qayta yuboring yoki admin bilan bog'laning."
-            : "Bu kursni ochish uchun to'lov qiling. Profil bo'limidan to'lov qo'shishingiz mumkin."}
+          <p className="mb-3">
+            {payment?.status === 'pending'
+              ? "To'lovingiz ko'rib chiqilmoqda. Tasdiqlangach darslar ochiladi."
+              : payment?.status === 'rejected'
+              ? "To'lovingiz rad etildi. Qayta bog'laning."
+              : "Bu kursni ochish uchun to'lov qiling."}
+          </p>
+          {payment?.status !== 'pending' && (
+            <a
+              href="https://t.me/xattotlikk_admin"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-ink text-beige-soft text-xs font-medium"
+            >
+              Telegram orqali to'lash
+            </a>
+          )}
         </div>
       )}
 

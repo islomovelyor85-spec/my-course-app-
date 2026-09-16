@@ -290,3 +290,35 @@ export async function getStudentProgress(userId) {
 
   return { courseTitle: '—', progressPercent: 0, currentLessonTitle: 'Hali kursga yozilmagan', isPaid: false }
 }
+
+// ---- Talabaning "joriy" kursini aniqlaydi va to'liq overview qaytaradi ----
+// Ko'p-kursli tizim uchun: localStorage'dagi oxirgi ochilgan kurs, aks holda
+// to'lov mavjud bo'lgan birinchi kurs, aks holda birinchi chop etilgan kurs.
+export async function getMyActiveCourseOverview(userId) {
+  const { data: courses } = await supabase
+    .from('courses')
+    .select('id, title')
+    .eq('status', 'published')
+    .order('created_at', { ascending: false })
+
+  if (!courses || courses.length === 0) {
+    return { course: null, isPaid: false, payment: null, modules: [], allLessons: [], completedCount: 0, totalLessons: 0, progressPercent: 0 }
+  }
+
+  let targetId = typeof window !== 'undefined' ? localStorage.getItem('xattot_last_course_id') : null
+  if (!targetId || !courses.find((c) => c.id === targetId)) {
+    let found = null
+    for (const c of courses) {
+      const payment = await getMyPayment(userId, c.id)
+      if (payment) { found = c.id; break }
+    }
+    targetId = found || courses[0].id
+  }
+
+  const overview = await getCourseOverviewById(userId, targetId)
+  const completedCount = overview.allLessons.filter((l) => l.submission?.status === 'approved').length
+  const totalLessons = overview.allLessons.length
+  const progressPercent = totalLessons > 0 ? (completedCount / totalLessons) * 100 : 0
+
+  return { ...overview, completedCount, totalLessons, progressPercent }
+}
