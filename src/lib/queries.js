@@ -217,3 +217,32 @@ export async function submitPayment({ userId, courseId, amount, paymentMethod, r
     throw new Error(error.message || 'To‘lovni saqlashda xatolik')
   }
 }
+
+// ---- Ko'p kursli tizim uchun (courses.status = 'draft' | 'published') ----
+
+export async function getPublishedCourses() {
+  const { data, error } = await supabase
+    .from('courses')
+    .select('*')
+    .eq('status', 'published')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data || []
+}
+
+export async function getCourseWithModules(courseId) {
+  const { data: course, error: courseErr } = await supabase
+    .from('courses')
+    .select('*')
+    .eq('id', courseId)
+    .single()
+  if (courseErr) throw courseErr
+
+  const { data: modules, error: modErr } = await supabase
+    .from('modules')
+    .select('*, lessons(*)')
+    .eq('course_id', courseId)
+  if (modErr) throw modErr
+
+  return { course, modules: modules || [] }
+}

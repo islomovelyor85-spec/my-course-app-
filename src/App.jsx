@@ -1,22 +1,88 @@
-import React from 'react';
-import { Routes, Route, Link } from 'react_router_dom';
-import Admin from './pages/Admin';
-import MyCourse from './pages/MyCourse';
+import { useEffect } from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import { RequireAuth, RequireAdmin } from './components/auth/ProtectedRoute'
+import AdminGate from './components/auth/AdminGate'
+import { initTelegramApp } from './lib/telegram'
+
+import StudentLayout from './components/layout/StudentLayout'
+import AdminLayout from './components/layout/AdminLayout'
+import LoadingSpinner from './components/common/LoadingSpinner'
+
+import Login from './pages/auth/Login'
+import Register from './pages/auth/Register'
+
+import Home from './pages/student/Home'
+import MyCourse from './pages/student/MyCourse'
+import Tasks from './pages/student/Tasks'
+import TaskSubmit from './pages/student/TaskSubmit'
+import ProgressPage from './pages/student/Progress'
+import Profile from './pages/student/Profile'
+
+import Dashboard from './pages/admin/Dashboard'
+import CourseManager from './pages/admin/CourseManager'
+import StudentsTracking from './pages/admin/StudentsTracking'
+import SubmissionsReview from './pages/admin/SubmissionsReview'
+import PaymentsReview from './pages/admin/PaymentsReview'
+
+function AuthGate({ children }) {
+  const { loading } = useAuth()
+  if (loading) return <LoadingSpinner fullscreen label="Ilova ishga tushmoqda..." />
+  return children
+}
+
+function AppRoutes() {
+  return (
+    <AuthGate>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        <Route
+          element={
+            <RequireAuth>
+              <StudentLayout />
+            </RequireAuth>
+          }
+        >
+          <Route path="/" element={<Home />} />
+          <Route path="/course/:id" element={<MyCourse />} />
+          <Route path="/tasks" element={<Tasks />} />
+          <Route path="/tasks/submit/:lessonId" element={<TaskSubmit />} />
+          <Route path="/progress" element={<ProgressPage />} />
+          <Route path="/profile" element={<Profile />} />
+        </Route>
+
+        <Route
+          element={
+            <RequireAdmin>
+              <AdminGate>
+                <AdminLayout />
+              </AdminGate>
+            </RequireAdmin>
+          }
+        >
+          <Route path="/admin" element={<Dashboard />} />
+          <Route path="/admin/courses" element={<CourseManager />} />
+          <Route path="/admin/students" element={<StudentsTracking />} />
+          <Route path="/admin/submissions" element={<SubmissionsReview />} />
+          <Route path="/admin/payments" element={<PaymentsReview />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AuthGate>
+  )
+}
 
 export default function App() {
-  return (
-    <div style={{ backgroundColor: '#121212', minHeight: '100vh', color: '#fff' }}>
-      <nav style={{ padding: '15px', borderBottom: '1px solid #333', display: 'flex', gap: '20px' }}>
-        <Link to="/" style={{ color: '#fff', textDecoration: 'none' }}>Bosh sahifa</Link>
-        <Link to="/my-course" style={{ color: '#fff', textDecoration: 'none' }}>Kursim</Link>
-        <Link to="/admin" style={{ color: '#fff', textDecoration: 'none' }}>Admin panel</Link>
-      </nav>
+  useEffect(() => {
+    initTelegramApp()
+  }, [])
 
-      <Routes>
-        <Route path="/" element={<MyCourse />} />
-        <Route path="/my-course" element={<MyCourse />} />
-        <Route path="/admin" element={<Admin />} />
-      </Routes>
-    </div>
-  );
+  return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
+  )
 }

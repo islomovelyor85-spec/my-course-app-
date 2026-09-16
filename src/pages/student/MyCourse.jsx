@@ -1,101 +1,72 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Lock, CheckCircle2, PlayCircle, ChevronDown } from 'lucide-react'
-import { useAuth } from '../../context/AuthContext'
-import { getMyCourseOverview, uploadReceiptFile, submitPayment } from '../../lib/queries'
+import { useParams, useNavigate } from 'react-router-dom'
+import { ChevronLeft, ChevronDown, PlayCircle, X } from 'lucide-react'
+import { getCourseWithModules } from '../../lib/queries'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
-import Modal from '../../components/common/Modal'
-import StatusBadge from '../../components/common/StatusBadge'
 
-function LessonRow({ lesson, onClick }) {
-  const icon =
-    lesson.status === 'completed' ? (
-      <CheckCircle2 size={18} className="text-emerald-600 flex-shrink-0" />
-    ) : lesson.status === 'unlocked' ? (
-      <PlayCircle size={18} className="text-gold-dark flex-shrink-0" />
-    ) : (
-      <Lock size={16} className="text-ink-soft/30 flex-shrink-0" />
-    )
-
-  return (
-    <button
-      onClick={() => !lesson.locked && onClick(lesson)}
-      disabled={lesson.locked}
-      className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors ${
-        lesson.locked ? 'opacity-50 cursor-not-allowed' : 'hover:bg-beige-soft'
-      }`}
-    >
-      {icon}
-      <span className={`text-sm flex-1 truncate ${lesson.locked ? 'text-ink-soft/50' : 'text-ink'}`}>
-        {lesson.title}
-      </span>
-      {lesson.submission && !lesson.locked && <StatusBadge status={lesson.submission.status} />}
-    </button>
-  )
+function toEmbedUrl(url) {
+  if (!url) return null
+  const yt = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([\w-]+)/)
+  if (yt) return { type: 'youtube', src: `https://www.youtube.com/embed/${yt[1]}` }
+  return { type: 'video', src: url }
 }
 
 export default function MyCourse() {
-  const { profile } = useAuth()
+  const { id } = useParams()
   const navigate = useNavigate()
-  const [overview, setOverview] = useState(null)
+  const [course, setCourse] = useState(null)
+  const [modules, setModules] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [openModules, setOpenModules] = useState({})
-  const [payOpen, setPayOpen] = useState(false)
-
-  async function refresh() {
-    if (!profile) return
-    const data = await getMyCourseOverview(profile.id)
-    setOverview(data)
-    if (data.modules[0]) setOpenModules({ [data.modules[0].id]: true })
-  }
+  const [activeLesson, setActiveLesson] = useState(null)
 
   useEffect(() => {
-    refresh().finally(() => setLoading(false))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile])
+    if (!id) return
+    localStorage.setItem('xattot_last_course_id', id)
+    setLoading(true)
+    setError('')
+    getCourseWithModules(id)
+      .then(({ course, modules }) => {
+        setCourse(course)
+        setModules(modules)
+        if (modules[0]) setOpenModules({ [modules[0].id]: true })
+      })
+      .catch((err) => setError(err.message || 'Kursni yuklashda xatolik'))
+      .finally(() => setLoading(false))
+  }, [id])
 
   if (loading) return <LoadingSpinner fullscreen />
 
-  if (!overview?.course) {
+  if (error) {
     return (
-      <div className="px-5 pt-10 text-center text-ink-soft/60 text-sm">Hozircha faol kurs mavjud emas.</div>
+      <div className="px-5 pt-10 text-center">
+        <p className="text-rose-600 text-sm mb-4">{error}</p>
+        <button onClick={() => navigate('/')} className="text-gold-dark text-sm font-medium">
+          Kurslar ro'yxatiga qaytish
+        </button>
+      </div>
     )
   }
 
-  return (
-    <div className="pb-4">
-      <div className="px-5 pt-6 mb-4">
-        <h1 className="font-display text-xl font-semibold text-ink">{overview.course.title}</h1>
-        {overview.course.description && (
-          <p className="text-ink-soft/60 text-sm mt-1">{overview.course.description}</p>
-        )}
-      </div>
+  if (!course) {
+    return <div className="px-5 pt-10 text-center text-ink-soft/60 text-sm">Kurs topilmadi</div>
+  }
 
-      {!overview.isPaid && (
-        <div className="mx-5 mb-5 relative">
-          <div className="bg-beige border border-gold/30 rounded-xl2 p-5 text-center">
-            <Lock size={20} className="text-gold-dark mx-auto mb-2" />
-            <p className="text-sm text-ink-soft mb-3">
-              {overview.payment?.status === 'pending'
-                ? 'To‘lov cheki yuborildi, ustoz tomonidan tasdiqlanishini kuting.'
-                : overview.payment?.status === 'rejected'
-                ? 'To‘lov tasdiqlanmadi. Iltimos, qaytadan urinib ko‘ring.'
-                : 'Darslarni ochish uchun kurs to‘lovini amalga oshiring.'}
-            </p>
-            {overview.payment?.status !== 'pending' && (
-              <button
-                onClick={() => setPayOpen(true)}
-                className="px-5 py-2.5 rounded-full bg-gold text-ink text-sm font-semibold hover:bg-gold-light transition-colors"
-              >
-                To‘lov chekini yuklash
-              </button>
-            )}
-          </div>
-        </div>
+  return (
+    <div className="pb-6">
+      <div className="px-5 pt-6 flex items-center gap-2 mb-2">
+        <button onClick={() => navigate('/')} className="p-1.5 -ml-1.5 rounded-full hover:bg-beige-soft">
+          <ChevronLeft size={20} className="text-ink-soft" />
+        </button>
+        <h1 className="font-display text-xl font-semibold text-ink truncate">{course.title}</h1>
+      </div>
+      {course.description && (
+        <p className="px-5 text-ink-soft/60 text-sm mb-5">{course.description}</p>
       )}
 
       <div className="px-5 space-y-3">
-        {overview.modules.map((mod, idx) => (
+        {modules.map((mod, idx) => (
           <div key={mod.id} className="border border-beige rounded-xl2 overflow-hidden bg-paper">
             <button
               onClick={() => setOpenModules((p) => ({ ...p, [mod.id]: !p[mod.id] }))}
@@ -111,123 +82,64 @@ export default function MyCourse() {
             </button>
             {openModules[mod.id] && (
               <div className="divide-y divide-beige">
-                {mod.lessons.map((lesson) => (
-                  <LessonRow
+                {(mod.lessons || []).map((lesson) => (
+                  <button
                     key={lesson.id}
-                    lesson={lesson}
-                    onClick={(l) => navigate(`/course/lesson/${l.id}`)}
-                  />
+                    onClick={() => setActiveLesson(lesson)}
+                    className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-beige-soft transition-colors"
+                  >
+                    <PlayCircle size={18} className="text-gold-dark flex-shrink-0" />
+                    <span className="text-sm text-ink flex-1 truncate">{lesson.title}</span>
+                  </button>
                 ))}
-                {mod.lessons.length === 0 && (
-                  <p className="px-4 py-3 text-xs text-ink-soft/40">Bu modulda hali darslar yo‘q</p>
+                {(!mod.lessons || mod.lessons.length === 0) && (
+                  <p className="px-4 py-3 text-xs text-ink-soft/40">Bu modulda hali darslar yo'q</p>
                 )}
               </div>
             )}
           </div>
         ))}
+        {modules.length === 0 && (
+          <p className="text-center text-ink-soft/40 text-sm py-10">Bu kursda hali modullar yo'q</p>
+        )}
       </div>
 
-      <PaymentModal
-        open={payOpen}
-        onClose={() => setPayOpen(false)}
-        courseId={overview.course.id}
-        userId={profile.id}
-        onSuccess={() => {
-          setPayOpen(false)
-          refresh()
-        }}
-      />
+      {activeLesson && <VideoPlayerModal lesson={activeLesson} onClose={() => setActiveLesson(null)} />}
     </div>
   )
 }
 
-function PaymentModal({ open, onClose, courseId, userId, onSuccess }) {
-  const [amount, setAmount] = useState('')
-  const [method, setMethod] = useState('Payme')
-  const [file, setFile] = useState(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState('')
-
-  async function handleSubmit() {
-    if (!file || !amount) {
-      setError('Summa va chek rasmini kiriting')
-      return
-    }
-    setSubmitting(true)
-    setError('')
-    try {
-      const receiptUrl = await uploadReceiptFile(file, userId)
-      await submitPayment({ userId, courseId, amount: Number(amount), paymentMethod: method, receiptUrl })
-      onSuccess()
-    } catch (err) {
-      setError(err.message || 'Xatolik yuz berdi')
-    } finally {
-      setSubmitting(false)
-    }
-  }
+function VideoPlayerModal({ lesson, onClose }) {
+  const embed = toEmbedUrl(lesson.video_url)
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="To‘lov chekini yuklash"
-      footer={
-        <>
-          <button onClick={onClose} className="px-4 py-2 text-sm text-ink-soft">
-            Bekor qilish
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-ink/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-2xl bg-paper rounded-xl2 overflow-hidden shadow-soft">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-beige">
+          <h3 className="font-display text-base font-semibold text-ink truncate">{lesson.title}</h3>
+          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-beige-soft flex-shrink-0">
+            <X size={18} className="text-ink-soft" />
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="px-5 py-2 rounded-full bg-ink text-beige-soft text-sm font-medium disabled:opacity-60"
-          >
-            {submitting ? 'Yuborilmoqda...' : 'Yuborish'}
-          </button>
-        </>
-      }
-    >
-      <div className="space-y-4">
-        <div>
-          <label className="text-xs font-medium text-ink-soft/70 mb-1.5 block">To‘langan summa</label>
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="Masalan: 350000"
-            className="w-full px-3.5 py-2.5 rounded-xl border border-beige bg-beige-soft text-sm focus:outline-none focus:ring-2 focus:ring-gold/40"
-          />
         </div>
-        <div>
-          <label className="text-xs font-medium text-ink-soft/70 mb-1.5 block">To‘lov usuli</label>
-          <select
-            value={method}
-            onChange={(e) => setMethod(e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-xl border border-beige bg-beige-soft text-sm focus:outline-none focus:ring-2 focus:ring-gold/40"
-          >
-            <option>Payme</option>
-            <option>Click</option>
-            <option>Bank kartasi</option>
-            <option>Naqd</option>
-          </select>
-        </div>
-        <div>
-          <label className="text-xs font-medium text-ink-soft/70 mb-1.5 block">Chek rasmi</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-            className="w-full text-sm"
-          />
-          {file && (
-            <img
-              src={URL.createObjectURL(file)}
-              alt="chek"
-              className="mt-2 max-h-40 rounded-xl object-contain border border-beige"
+        <div className="aspect-video bg-ink">
+          {embed?.type === 'youtube' ? (
+            <iframe
+              src={embed.src}
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              title={lesson.title}
             />
+          ) : embed?.type === 'video' ? (
+            <video src={embed.src} controls autoPlay className="w-full h-full object-contain" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-beige-soft/50 text-sm">
+              Video havolasi mavjud emas
+            </div>
           )}
         </div>
-        {error && <p className="text-rose-600 text-xs">{error}</p>}
       </div>
-    </Modal>
+    </div>
   )
 }

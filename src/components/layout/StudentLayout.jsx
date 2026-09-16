@@ -1,15 +1,20 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { Home, BookOpen, ClipboardCheck, TrendingUp, User } from 'lucide-react'
 
-const NAV_ITEMS = [
-  { to: '/', label: 'Bosh sahifa', icon: Home, end: true },
-  { to: '/course', label: 'Kursim', icon: BookOpen },
-  { to: '/tasks', label: 'Vazifalar', icon: ClipboardCheck },
-  { to: '/progress', label: 'Progress', icon: TrendingUp },
-  { to: '/profile', label: 'Profil', icon: User }
-]
+function getMyCourseHref() {
+  const lastId = typeof window !== 'undefined' ? localStorage.getItem('xattot_last_course_id') : null
+  return lastId ? `/course/${lastId}` : '/'
+}
 
 export default function StudentLayout() {
+  const NAV_ITEMS = [
+    { to: '/', label: 'Bosh sahifa', icon: Home, end: true },
+    { to: getMyCourseHref(), label: 'Kursim', icon: BookOpen },
+    { to: '/tasks', label: 'Vazifalar', icon: ClipboardCheck },
+    { to: '/progress', label: 'Progress', icon: TrendingUp },
+    { to: '/profile', label: 'Profil', icon: User }
+  ]
+
   return (
     <div className="min-h-screen bg-paper flex flex-col">
       <main className="flex-1 pb-24 safe-top">
@@ -20,7 +25,7 @@ export default function StudentLayout() {
         <div className="max-w-md mx-auto flex items-stretch justify-between px-2">
           {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
             <NavLink
-              key={to}
+              key={label}
               to={to}
               end={end}
               className={({ isActive }) =>
