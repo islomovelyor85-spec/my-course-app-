@@ -1,4 +1,5 @@
-import { PenTool, Phone, LogOut, CreditCard } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { PenTool, Phone, LogOut, CreditCard, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
 export default function Profile() {
@@ -36,6 +37,15 @@ export default function Profile() {
           <span className="text-sm text-ink font-medium">{accessLabel}</span>
         </div>
       </div>
+
+      {profile?.role === 'admin' && (
+        <Link
+          to="/admin"
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl2 bg-ink text-beige-soft text-sm font-medium hover:bg-ink-soft transition-colors mb-3"
+        >
+          <ShieldCheck size={16} className="text-gold-light" /> Admin panelga o'tish
+        </Link>
+      )}
 
       <button
         onClick={logout}
