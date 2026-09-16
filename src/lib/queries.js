@@ -1,11 +1,5 @@
 import { supabase } from './supabaseClient'
 
-// -----------------------------------------------------------------------------
-// MVP eslatma: hozircha bitta faol kurs bilan ishlaydi (birinchi is_published=true
-// kurs). Kelajakda bir nechta kursga yozilish kerak bo'lsa, bu funksiyaga
-// courseId parametr qo'shib, kurslar ro'yxati sahifasi ustiga qurish mumkin.
-// -----------------------------------------------------------------------------
-
 export async function getActiveCourse() {
   const { data, error } = await supabase
     .from('courses')
@@ -62,11 +56,6 @@ export async function getMySubmissionsMap(userId) {
   return map
 }
 
-/**
- * Butun kurs strukturasini, to'lov holatini va qulflash mantig'ini birlashtiradi.
- * Qaytaradi: { course, isPaid, payment, modules, progressPercent, allLessons }
- * modules[].lessons[] elementlariga `locked`, `status`, `submission` qo'shiladi.
- */
 export async function getMyCourseOverview(userId) {
   const course = await getActiveCourse()
   if (!course) {
@@ -206,8 +195,6 @@ export async function submitPayment({ userId, courseId, amount, paymentMethod, r
   }
 }
 
-// ---- Ko'p kursli tizim uchun (courses.status = 'draft' | 'published') ----
-
 export async function getPublishedCourses() {
   const { data, error } = await supabase
     .from('courses')
@@ -235,7 +222,6 @@ export async function getCourseWithModules(courseId) {
   return { course, modules: modules || [] }
 }
 
-// ---- Kurs ID bo'yicha to'liq holat (to'lov + qulflash), ko'p-kursli tizim uchun ----
 export async function getCourseOverviewById(userId, courseId) {
   const { data: course, error: courseErr } = await supabase
     .from('courses')
@@ -272,4 +258,35 @@ export async function getCourseOverviewById(userId, courseId) {
   }))
 
   return { course, isPaid, payment, modules: enrichedModules, allLessons: allLessonsFlat }
+}
+
+// ---- Admin uchun: bir o'quvchining KO'P kurs orasidan qaysi birida ekanini topadi ----
+export async function getStudentProgress(userId) {
+  const { data: courses } = await supabase
+    .from('courses')
+    .select('id, title')
+    .eq('status', 'published')
+    .order('created_at', { ascending: false })
+
+  if (!courses || courses.length === 0) {
+    return { courseTitle: '—', progressPercent: 0, currentLessonTitle: '—', isPaid: false }
+  }
+
+  for (const course of courses) {
+    const payment = await getMyPayment(userId, course.id)
+    if (payment) {
+      const overview = await getCourseOverviewById(userId, course.id)
+      const total = overview.allLessons.length
+      const completed = overview.allLessons.filter((l) => l.submission?.status === 'approved').length
+      const currentLesson = overview.allLessons.find((l) => l.status === 'unlocked')
+      return {
+        courseTitle: course.title,
+        progressPercent: total > 0 ? (completed / total) * 100 : 0,
+        currentLessonTitle: currentLesson?.title || (total > 0 && completed === total ? 'Kurs tugallangan' : '—'),
+        isPaid: overview.isPaid
+      }
+    }
+  }
+
+  return { courseTitle: '—', progressPercent: 0, currentLessonTitle: 'Hali kursga yozilmagan', isPaid: false }
 }
